@@ -51,7 +51,7 @@ st.markdown(
 
     .block-container {
         max-width: 1420px;
-        padding-top: 1.5rem;
+        padding-top: 4.75rem;
         padding-bottom: 4rem;
     }
 
@@ -63,6 +63,12 @@ st.markdown(
 
     [data-testid="stSidebar"] .block-container {
         padding-top: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 5.25rem;
+        }
     }
 
     [data-testid="stMetric"] {
@@ -936,6 +942,10 @@ if st.session_state.selected_product_no is not None:
     )
     st.stop()
 
+# Curated dashboard features. Change these product numbers to control the three
+# cards shown on the landing page. Filters still apply.
+FEATURED_PRODUCT_NUMBERS = [2, 11, 12]
+
 # -----------------------------------------------------------------------------
 # Main views
 # -----------------------------------------------------------------------------
@@ -964,7 +974,17 @@ if page == "Dashboard":
     if filtered.empty:
         st.info("No products match the current filters.")
     else:
-        featured = filtered.head(3)
+        curated = filtered[filtered["No."].isin(FEATURED_PRODUCT_NUMBERS)].copy()
+        curated["_featured_order"] = curated["No."].map(
+            {number: index for index, number in enumerate(FEATURED_PRODUCT_NUMBERS)}
+        )
+        curated = curated.sort_values("_featured_order").drop(columns="_featured_order")
+
+        # If a featured product is excluded by the active filters, fill the open
+        # slot with the next matching product so the dashboard can still show up to three.
+        remaining = filtered[~filtered["No."].isin(curated["No."])].head(3 - len(curated))
+        featured = pd.concat([curated, remaining], ignore_index=True).head(3)
+
         columns = st.columns(3, gap="large")
         for column, (_, row) in zip(columns, featured.iterrows()):
             with column:
