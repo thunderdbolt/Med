@@ -249,6 +249,155 @@ st.markdown(
         color: var(--muted);
         font-size: .82rem;
     }
+
+    /* Consistent dark-mode surface overrides */
+    :root {
+        --navy: #f3f7ff;
+        --blue: #6ea8ff;
+        --teal: #45d6c0;
+        --green: #47d99a;
+        --amber: #f4bf58;
+        --red: #ff7b72;
+        --ink: #f5f7fa;
+        --muted: #aeb8c7;
+        --line: #303846;
+        --surface: #171c24;
+        --surface-soft: #11161e;
+    }
+
+    html, body, [class*=\"css\"] {
+        color: var(--ink);
+    }
+
+    .stApp {
+        color: var(--ink);
+        background:
+            radial-gradient(circle at 88% 4%, rgba(69, 214, 192, .08), transparent 24rem),
+            linear-gradient(180deg, #0e1117 0%, #10151d 32%, #0e1117 100%);
+    }
+
+    [data-testid=\"stHeader\"] {
+        background: rgba(14, 17, 23, .92);
+    }
+
+    [data-testid=\"stSidebar\"] {
+        background: #151a22;
+        border-right-color: var(--line);
+    }
+
+    [data-testid=\"stSidebar\"] * {
+        color: #edf2f7;
+    }
+
+    [data-testid=\"stMetric\"],
+    [data-testid=\"stVerticalBlockBorderWrapper\"] {
+        color: var(--ink);
+        background: rgba(23, 28, 36, .97);
+        border-color: var(--line);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .22);
+    }
+
+    [data-testid=\"stMetricLabel\"] p {
+        color: var(--muted) !important;
+    }
+
+    [data-testid=\"stMetricValue\"] {
+        color: var(--ink) !important;
+    }
+
+    .hero {
+        border-color: #2c4651;
+        background:
+            radial-gradient(circle at 88% 18%, rgba(69, 214, 192, .16), transparent 24%),
+            linear-gradient(120deg, #162233 0%, #151c27 55%, #102828 100%);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, .28);
+    }
+
+    .hero h1, .product-title, .profile-title, .placeholder strong {
+        color: var(--ink);
+    }
+
+    .hero p, .product-meta, .small-note {
+        color: var(--muted);
+    }
+
+    .section-label, .info-panel h4 {
+        color: #9aa7b8;
+    }
+
+    .info-panel {
+        background: var(--surface-soft);
+        border-color: var(--line);
+    }
+
+    .info-panel p {
+        color: #dce3ec;
+    }
+
+    .placeholder {
+        color: var(--muted);
+        border-color: #465264;
+        background: linear-gradient(145deg, #171d26, #11161e);
+    }
+
+    .badge-approved {
+        color: #83efba;
+        background: #103526;
+        border-color: #236f4d;
+    }
+
+    .badge-development {
+        color: #ffd47d;
+        background: #3b2d10;
+        border-color: #765719;
+    }
+
+    .badge-certified {
+        color: #9bc4ff;
+        background: #122d52;
+        border-color: #285b9d;
+    }
+
+    .badge-unconfirmed {
+        color: #c7d0dc;
+        background: #262d38;
+        border-color: #465264;
+    }
+
+    .badge-negative {
+        color: #ffaaa3;
+        background: #481d1d;
+        border-color: #843333;
+    }
+
+    div[data-baseweb=\"select\"] > div,
+    div[data-baseweb=\"input\"] > div,
+    [data-testid=\"stFileUploaderDropzone\"],
+    textarea, input {
+        background-color: #11161e !important;
+        color: var(--ink) !important;
+        border-color: var(--line) !important;
+    }
+
+    div.stButton > button,
+    div.stLinkButton > a,
+    [data-testid=\"stDownloadButton\"] button {
+        color: #f7fbff;
+        background: #1d2734;
+        border-color: #3b4656;
+    }
+
+    div.stButton > button:hover,
+    div.stLinkButton > a:hover,
+    [data-testid=\"stDownloadButton\"] button:hover {
+        color: #07130f;
+        background: var(--teal);
+        border-color: var(--teal);
+    }
+
+    h1, h2, h3, h4, h5, h6, p, label, .stMarkdown {
+        color: inherit;
+    }
     </style>
     """,
     unsafe_allow_html=True,
