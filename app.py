@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 from typing import Iterable
 
@@ -22,13 +23,55 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-      .block-container {padding-top: 1.7rem; padding-bottom: 3rem;}
-      [data-testid="stMetric"] {background: rgba(120,120,120,.08); border: 1px solid rgba(120,120,120,.16); padding: 14px; border-radius: 14px;}
-      .device-card {border: 1px solid rgba(120,120,120,.22); border-radius: 18px; padding: 18px; margin-bottom: 14px; background: rgba(120,120,120,.045);}
-      .device-title {font-size: 1.25rem; font-weight: 750; margin-bottom: 5px;}
-      .muted {opacity: .72;}
-      .badge {display:inline-block; padding:4px 9px; margin:3px 4px 3px 0; border-radius:999px; background:rgba(50,120,190,.13); font-size:.78rem; font-weight:650;}
-      .section-label {font-size:.78rem; font-weight:750; letter-spacing:.04em; text-transform:uppercase; opacity:.68; margin-top:8px;}
+      :root {
+        --ink: #183153;
+        --muted: #64748b;
+        --teal: #0f766e;
+        --teal-soft: #ecfdf5;
+        --blue-soft: #eff6ff;
+        --amber-soft: #fffbeb;
+        --red-soft: #fef2f2;
+        --line: #e2e8f0;
+        --surface: #ffffff;
+      }
+      .stApp {background: linear-gradient(180deg, #f8fbff 0%, #ffffff 32%);}
+      .block-container {padding-top: 1.35rem; padding-bottom: 4rem; max-width: 1450px;}
+      [data-testid="stSidebar"] {border-right: 1px solid var(--line);}
+      [data-testid="stMetric"] {
+        background: rgba(255,255,255,.92); border: 1px solid var(--line);
+        padding: 16px 18px; border-radius: 18px; box-shadow: 0 8px 24px rgba(15,23,42,.05);
+      }
+      .hero {
+        border: 1px solid #dbeafe; border-radius: 26px; padding: 30px 32px;
+        background: radial-gradient(circle at 86% 18%, rgba(20,184,166,.16), transparent 25%),
+                    linear-gradient(120deg, #eff6ff 0%, #f8fafc 55%, #ecfeff 100%);
+        box-shadow: 0 16px 45px rgba(15,23,42,.07); margin-bottom: 18px;
+      }
+      .eyebrow {font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; font-weight:800; color:var(--teal);}
+      .hero h1 {color:var(--ink); font-size:2.45rem; line-height:1.08; margin:.45rem 0 .7rem;}
+      .hero p {color:var(--muted); max-width:850px; font-size:1.03rem; margin:0;}
+      .product-card {
+        background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 22px;
+        padding: 16px; margin-bottom: 16px; box-shadow: 0 10px 28px rgba(15,23,42,.055);
+      }
+      .product-title {font-size:1.22rem; line-height:1.25; font-weight:800; color:var(--ink); margin:.15rem 0 .35rem;}
+      .muted {color:var(--muted); font-size:.92rem;}
+      .badge {display:inline-block; padding:5px 10px; margin:5px 5px 2px 0; border-radius:999px; font-size:.76rem; font-weight:750; border:1px solid transparent;}
+      .badge-good {background:var(--teal-soft); color:#047857; border-color:#a7f3d0;}
+      .badge-warn {background:var(--amber-soft); color:#a16207; border-color:#fde68a;}
+      .badge-info {background:var(--blue-soft); color:#1d4ed8; border-color:#bfdbfe;}
+      .badge-muted {background:#f8fafc; color:#475569; border-color:#e2e8f0;}
+      .section-label {font-size:.76rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#64748b; margin:.7rem 0 .2rem;}
+      .detail-shell {background:white; border:1px solid var(--line); border-radius:24px; padding:22px; box-shadow:0 14px 34px rgba(15,23,42,.06);}
+      .profile-title {color:var(--ink); font-weight:850; font-size:2rem; line-height:1.15; margin:.25rem 0 .6rem;}
+      .info-panel {background:#f8fafc; border:1px solid var(--line); border-radius:16px; padding:15px 17px; min-height:120px;}
+      .info-panel h4 {font-size:.78rem; text-transform:uppercase; letter-spacing:.07em; color:#64748b; margin:0 0 .55rem;}
+      .info-panel p {margin:0; color:#334155; line-height:1.55;}
+      .stat-strip {background:white; border:1px solid var(--line); border-radius:18px; padding:15px; text-align:center;}
+      .stat-number {font-size:1.8rem; font-weight:850; color:var(--ink);}
+      .stat-label {font-size:.82rem; color:var(--muted);}
+      div.stButton > button {border-radius:12px; font-weight:700;}
+      div[data-testid="stImage"] img {border-radius:16px;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -64,8 +107,7 @@ TEXT_COLUMNS = [
 def clean_text(value: object) -> str:
     if pd.isna(value):
         return ""
-    text = str(value).strip()
-    return " ".join(text.split())
+    return " ".join(str(value).strip().split())
 
 
 def split_bullets(value: object) -> list[str]:
@@ -85,15 +127,11 @@ def normalize_status(value: object) -> str:
     if not text:
         return "Not stated"
     negative = ("no public", "not confirmed", "not identified", "pending", "awaiting", "underway")
-    if "approved" in text or "clearance" in text or "cleared" in text or "certification reported" in text or "ce certified" in text:
-        if any(term in text for term in negative):
-            return "Unconfirmed / pending"
-        return "Approved / certified"
-    if "commercial" in text or "available" in text or "marketed" in text or "sales" in text:
-        if any(term in text for term in negative):
-            return "Limited / unconfirmed"
-        return "Commercially available"
-    if "development" in text or "early-stage" in text or "pre-commercial" in text or "planned" in text:
+    if any(term in text for term in ("approved", "clearance", "cleared", "certification reported", "ce certified")):
+        return "Unconfirmed / pending" if any(term in text for term in negative) else "Approved / certified"
+    if any(term in text for term in ("commercial", "available", "marketed", "sales")):
+        return "Limited / unconfirmed" if any(term in text for term in negative) else "Commercially available"
+    if any(term in text for term in ("development", "early-stage", "pre-commercial", "planned")):
         return "Under development"
     if any(term in text for term in negative):
         return "Unconfirmed / pending"
@@ -101,10 +139,7 @@ def normalize_status(value: object) -> str:
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    renamed = {}
-    for col in df.columns:
-        key = clean_text(col).lower()
-        renamed[col] = COLUMN_ALIASES.get(key, clean_text(col))
+    renamed = {col: COLUMN_ALIASES.get(clean_text(col).lower(), clean_text(col)) for col in df.columns}
     df = df.rename(columns=renamed)
     for col in TEXT_COLUMNS:
         if col not in df.columns:
@@ -130,32 +165,16 @@ def attach_image_manifest(df: pd.DataFrame) -> pd.DataFrame:
     result = df.copy()
     if "No." in result.columns:
         result["No."] = pd.to_numeric(result["No."], errors="coerce")
-        result = result.merge(
-            manifest[["No.", "Image Path", "Gallery Paths"]],
-            on="No.",
-            how="left",
-            suffixes=("", "_manifest"),
-        )
+        result = result.merge(manifest[["No.", "Image Path", "Gallery Paths"]], on="No.", how="left", suffixes=("", "_manifest"))
     else:
-        result = result.merge(
-            manifest[["Product Name", "Image Path", "Gallery Paths"]],
-            on="Product Name",
-            how="left",
-            suffixes=("", "_manifest"),
-        )
+        result = result.merge(manifest[["Product Name", "Image Path", "Gallery Paths"]], on="Product Name", how="left", suffixes=("", "_manifest"))
     for column in ("Image Path", "Gallery Paths"):
         manifest_column = f"{column}_manifest"
         if manifest_column in result.columns:
-            current = result[column] if column in result.columns else ""
-            result[column] = current.fillna("").astype(str)
+            result[column] = result[column].fillna("").astype(str)
             result[column] = result[column].where(result[column].str.strip().ne(""), result[manifest_column].fillna(""))
             result = result.drop(columns=[manifest_column])
     return result
-
-
-@st.cache_data(show_spinner=False)
-def load_default_data(path: str) -> pd.DataFrame:
-    return attach_image_manifest(read_data(Path(path)))
 
 
 def detect_excel_header(source) -> int:
@@ -188,22 +207,24 @@ def read_data(source) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
+@st.cache_data(show_spinner=False)
+def load_default_data(path: str) -> pd.DataFrame:
+    return attach_image_manifest(read_data(Path(path)))
+
+
 def validate_data(df: pd.DataFrame) -> list[str]:
     return [col for col in REQUIRED_COLUMNS if col not in df.columns or df[col].eq("").all()]
 
 
 def options_from_bullets(series: pd.Series) -> list[str]:
-    values = set()
+    values: set[str] = set()
     for value in series:
         values.update(split_bullets(value))
     return sorted(values)
 
 
 def contains_any(value: str, selected: list[str]) -> bool:
-    if not selected:
-        return True
-    value_lower = value.lower()
-    return any(item.lower() in value_lower for item in selected)
+    return not selected or any(item.lower() in value.lower() for item in selected)
 
 
 def website_url(value: str) -> str | None:
@@ -214,9 +235,7 @@ def website_url(value: str) -> str | None:
 
 
 def resolve_gallery(row: pd.Series) -> list[Path]:
-    raw_paths = clean_text(row.get("Gallery Paths", ""))
-    if not raw_paths and row.get("Image Path"):
-        raw_paths = clean_text(row.get("Image Path"))
+    raw_paths = clean_text(row.get("Gallery Paths", "")) or clean_text(row.get("Image Path", ""))
     resolved: list[Path] = []
     for raw_path in [part.strip() for part in raw_paths.split("|") if part.strip()]:
         candidates = [APP_DIR / raw_path, IMAGE_DIR / Path(raw_path).name]
@@ -228,32 +247,141 @@ def resolve_gallery(row: pd.Series) -> list[Path]:
 
 def resolve_image(row: pd.Series) -> Path | None:
     gallery = resolve_gallery(row)
-    if gallery:
-        return gallery[0]
-    slug = "".join(c.lower() if c.isalnum() else "_" for c in row["Product Name"]).strip("_")
-    return next((IMAGE_DIR / f"{slug}{ext}" for ext in (".png", ".jpg", ".jpeg", ".webp") if (IMAGE_DIR / f"{slug}{ext}").exists()), None)
+    return gallery[0] if gallery else None
 
 
-st.title("Emerging Medical Device Explorer")
-st.caption("Explore, compare, map, and evaluate emerging medical technologies from a GitHub-hosted research dataset.")
+def badge_class(status: str) -> str:
+    lowered = status.lower()
+    if "approved" in lowered or "commercially" in lowered:
+        return "badge-good"
+    if "pending" in lowered or "development" in lowered or "limited" in lowered:
+        return "badge-warn"
+    if "not stated" in lowered or "other" in lowered:
+        return "badge-muted"
+    return "badge-info"
+
+
+def badge_html(label: str, status: str) -> str:
+    return f'<span class="badge {badge_class(status)}">{escape(label)}: {escape(status)}</span>'
+
+
+def short_text(value: str, max_chars: int = 190) -> str:
+    text = first_nonempty(split_bullets(value), "Not stated")
+    return text if len(text) <= max_chars else text[: max_chars - 1].rstrip() + "…"
+
+
+def render_profile(row: pd.Series) -> None:
+    top_left, top_right = st.columns([1.15, 1.55], gap="large")
+    gallery = resolve_gallery(row)
+    with top_left:
+        if gallery:
+            index_key = f"gallery_index_{int(row.get('No.', 0) or 0)}"
+            if index_key not in st.session_state:
+                st.session_state[index_key] = 0
+            index = min(st.session_state[index_key], len(gallery) - 1)
+            st.image(str(gallery[index]), use_container_width=True)
+            if len(gallery) > 1:
+                prev_col, counter_col, next_col = st.columns([1, 2, 1])
+                if prev_col.button("←", key=f"prev_{index_key}", use_container_width=True):
+                    st.session_state[index_key] = (index - 1) % len(gallery)
+                    st.rerun()
+                counter_col.markdown(f"<div style='text-align:center;color:#64748b;padding:.45rem'>{index + 1} of {len(gallery)}</div>", unsafe_allow_html=True)
+                if next_col.button("→", key=f"next_{index_key}", use_container_width=True):
+                    st.session_state[index_key] = (index + 1) % len(gallery)
+                    st.rerun()
+                thumbs = st.columns(min(4, len(gallery)))
+                for i, image in enumerate(gallery):
+                    with thumbs[i % len(thumbs)]:
+                        st.image(str(image), use_container_width=True)
+        else:
+            st.info("No product image has been linked yet.")
+
+    with top_right:
+        st.markdown('<div class="eyebrow">Product intelligence profile</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="profile-title">{escape(row["Product Name"])}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="muted">{escape(row["Country of Origin"])} · {escape(first_nonempty(split_bullets(row["Product Type"])))}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            badge_html("Commercial", row["Commercial Category"])
+            + badge_html("U.S.", row["US Category"])
+            + badge_html("Europe", row["Europe Category"])
+            + badge_html("Middle East", row["Middle East Category"]),
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="section-label">Innovation snapshot</div>', unsafe_allow_html=True)
+        st.write(short_text(row["Innovation"], 500))
+        meta1, meta2 = st.columns(2)
+        with meta1:
+            st.markdown("**Manufacturer / developer**")
+            st.write(row["Manufacturer/Developer"] or "Not stated")
+        with meta2:
+            st.markdown("**Medical field**")
+            st.write(row["Medical Field"] or "Not stated")
+        url = website_url(row["Website"])
+        if url:
+            st.link_button("Visit product or manufacturer website ↗", url, use_container_width=True)
+
+    st.markdown("### Research profile")
+    overview_tab, clinical_tab, market_tab, regulatory_tab = st.tabs(["Overview", "Clinical value", "Market", "Regulatory"])
+    with overview_tab:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f'<div class="info-panel"><h4>Innovation</h4><p>{escape(row["Innovation"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+            st.write("")
+            st.markdown(f'<div class="info-panel"><h4>Materials</h4><p>{escape(row["Material Used"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="info-panel"><h4>Product type</h4><p>{escape(row["Product Type"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+            st.write("")
+            st.markdown(f'<div class="info-panel"><h4>Medical field</h4><p>{escape(row["Medical Field"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+    with clinical_tab:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown(f'<div class="info-panel"><h4>Hospital need</h4><p>{escape(row["Hospital Need"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="info-panel"><h4>Advantages</h4><p>{escape(row["Advantages"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+        with c3:
+            st.markdown(f'<div class="info-panel"><h4>Limitations</h4><p>{escape(row["Disadvantages/Limitations"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+    with market_tab:
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown(f'<div class="info-panel"><h4>Commercial status</h4><p>{escape(row["Commercial Status"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+        with c2:
+            st.markdown(f'<div class="info-panel"><h4>Market potential</h4><p>{escape(row["Market Potential"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+        with c3:
+            st.markdown(f'<div class="info-panel"><h4>Recommendation</h4><p>{escape(row["Recommendation"] or "Not stated")}</p></div>', unsafe_allow_html=True)
+    with regulatory_tab:
+        for label, text in (("United States", row["U.S. Status"]), ("Europe", row["Europe Status"]), ("Middle East", row["Middle East Status"])):
+            st.markdown(f"**{label}**")
+            st.write(text or "Not stated")
+            st.divider()
+
+
+# Session defaults
+st.session_state.setdefault("selected_product", None)
+st.session_state.setdefault("page", "Dashboard")
 
 with st.sidebar:
-    st.header("Data source")
-    upload = st.file_uploader("Upload Excel or CSV", type=["xlsx", "xls", "csv"], help="The uploaded file is used only for this browser session.")
+    st.markdown("## 🩺 Device Explorer")
+    st.caption("Emerging medical technology intelligence")
+    page = st.radio("Navigate", ["Dashboard", "Explorer", "Compare", "Analytics", "Data"], key="page")
+    st.divider()
+    st.markdown("### Data source")
+    upload = st.file_uploader("Upload Excel or CSV", type=["xlsx", "xls", "csv"], help="Used only for this browser session.")
     try:
         data = attach_image_manifest(read_data(upload)) if upload else load_default_data(str(DEFAULT_DATA))
     except Exception as exc:
         st.error(f"Could not read the data file: {exc}")
         st.stop()
-
     missing = validate_data(data)
     if missing:
         st.error("Missing required columns: " + ", ".join(missing))
         st.stop()
-
     st.success(f"{len(data)} valid products loaded")
+
     st.divider()
-    st.header("Filters")
+    st.markdown("### Filters")
     search = st.text_input("Search", placeholder="Product, material, innovation…")
     countries = st.multiselect("Country", sorted(data["Country of Origin"].dropna().unique()))
     product_types = st.multiselect("Product type", options_from_bullets(data["Product Type"]))
@@ -261,7 +389,6 @@ with st.sidebar:
     commercial = st.multiselect("Commercial status", sorted(data["Commercial Category"].unique()))
     us_status = st.multiselect("U.S. status", sorted(data["US Category"].unique()))
     eu_status = st.multiselect("Europe status", sorted(data["Europe Category"].unique()))
-    me_status = st.multiselect("Middle East status", sorted(data["Middle East Category"].unique()))
 
 filtered = data.copy()
 if search:
@@ -280,127 +407,146 @@ if us_status:
     filtered = filtered[filtered["US Category"].isin(us_status)]
 if eu_status:
     filtered = filtered[filtered["Europe Category"].isin(eu_status)]
-if me_status:
-    filtered = filtered[filtered["Middle East Category"].isin(me_status)]
 
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Products", len(filtered))
-m2.metric("Countries", filtered["Country of Origin"].nunique())
-m3.metric("Medical fields", filtered["Primary Medical Field"].nunique())
-m4.metric("Commercially available", int((filtered["Commercial Category"] == "Commercially available").sum()))
+# Dedicated product profile view
+if st.session_state.selected_product:
+    product_rows = data[data["Product Name"] == st.session_state.selected_product]
+    if product_rows.empty:
+        st.session_state.selected_product = None
+        st.rerun()
+    back_col, spacer = st.columns([1, 5])
+    if back_col.button("← Back to explorer", use_container_width=True):
+        st.session_state.selected_product = None
+        st.session_state.page = "Explorer"
+        st.rerun()
+    st.markdown('<div class="detail-shell">', unsafe_allow_html=True)
+    render_profile(product_rows.iloc[0])
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.divider()
+    st.caption("Research support tool only. Verify regulatory and commercial information before procurement or clinical decisions.")
+    st.stop()
 
-explore_tab, map_tab, compare_tab, insights_tab, data_tab = st.tabs(["Explore", "Map", "Compare", "Insights", "Data"])
+if page == "Dashboard":
+    st.markdown(
+        """
+        <div class="hero">
+          <div class="eyebrow">Emerging medical technology intelligence</div>
+          <h1>Explore promising devices, markets, and regulatory pathways.</h1>
+          <p>Filter the research portfolio, inspect rich product profiles, compare technologies, and explore geographic and commercial patterns.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Products", len(filtered))
+    m2.metric("Countries", filtered["Country of Origin"].nunique())
+    m3.metric("Medical fields", filtered["Primary Medical Field"].nunique())
+    m4.metric("Commercially available", int((filtered["Commercial Category"] == "Commercially available").sum()))
 
-with explore_tab:
+    st.markdown("### Global portfolio")
     if filtered.empty:
         st.info("No products match the current filters.")
     else:
-        sort_choice = st.selectbox("Sort products", ["Product name", "Country", "Commercial status"], label_visibility="collapsed")
-        sort_map = {"Product name": "Product Name", "Country": "Country of Origin", "Commercial status": "Commercial Category"}
-        for _, row in filtered.sort_values(sort_map[sort_choice]).iterrows():
-            with st.container():
-                st.markdown('<div class="device-card">', unsafe_allow_html=True)
-                image_col, info_col = st.columns([1, 3])
-                image_path = resolve_image(row)
-                with image_col:
-                    if image_path:
-                        st.image(str(image_path), use_container_width=True)
-                    else:
-                        st.markdown("### 🩺")
-                        st.caption("Add a matching image to `/images` or provide an `Image Path` column.")
-                with info_col:
-                    st.markdown(f'<div class="device-title">{row["Product Name"]}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<span class="muted">{row["Country of Origin"]} · {first_nonempty(split_bullets(row["Product Type"]))}</span>', unsafe_allow_html=True)
-                    badges = [row["Commercial Category"], row["US Category"], row["Europe Category"]]
-                    st.markdown("".join(f'<span class="badge">{b}</span>' for b in badges), unsafe_allow_html=True)
-                    st.markdown('<div class="section-label">Innovation</div>', unsafe_allow_html=True)
-                    st.write(first_nonempty(split_bullets(row["Innovation"])))
-                    url = website_url(row["Website"])
-                    if url:
-                        st.link_button("Product / manufacturer website", url)
-                with st.expander("View full research profile"):
-                    gallery = resolve_gallery(row)
-                    if gallery:
-                        st.markdown("**Product gallery**")
-                        gallery_columns = st.columns(min(3, len(gallery)))
-                        for image_index, gallery_image in enumerate(gallery):
-                            with gallery_columns[image_index % len(gallery_columns)]:
-                                st.image(str(gallery_image), use_container_width=True)
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.markdown("**Medical field**")
-                        st.write(row["Medical Field"] or "Not stated")
-                        st.markdown("**Hospital need**")
-                        st.write(row["Hospital Need"] or "Not stated")
-                        st.markdown("**Materials**")
-                        st.write(row["Material Used"] or "Not stated")
-                        st.markdown("**Advantages**")
-                        st.write(row["Advantages"] or "Not stated")
-                    with c2:
-                        st.markdown("**Limitations**")
-                        st.write(row["Disadvantages/Limitations"] or "Not stated")
-                        st.markdown("**Commercial status**")
-                        st.write(row["Commercial Status"] or "Not stated")
-                        st.markdown("**Market potential**")
-                        st.write(row["Market Potential"] or "Not stated")
-                        st.markdown("**Recommendation**")
-                        st.write(row["Recommendation"] or "Not stated")
-                    st.markdown("**Regional regulatory status**")
-                    st.write({"United States": row["U.S. Status"], "Europe": row["Europe Status"], "Middle East": row["Middle East Status"]})
-                st.markdown('</div>', unsafe_allow_html=True)
-
-with map_tab:
-    st.subheader("Product origins")
-    st.caption("Marker size reflects the number of matching products from each country. Use the filters to update the map.")
-    if filtered.empty:
-        st.info("No locations to map.")
-    else:
-        map_df = filtered.groupby("Country of Origin", as_index=False).agg(
-            Products=("Product Name", "count"),
-            Product_names=("Product Name", lambda s: "<br>".join(s)),
-        )
-        fig = px.scatter_geo(
-            map_df,
-            locations="Country of Origin",
-            locationmode="country names",
-            size="Products",
-            hover_name="Country of Origin",
-            hover_data={"Products": True, "Product_names": True},
-            projection="natural earth",
-            title="Global distribution of emerging medical devices",
-        )
-        fig.update_layout(height=620, margin=dict(l=0, r=0, t=50, b=0))
+        map_df = filtered.groupby("Country of Origin", as_index=False).agg(Products=("Product Name", "count"), Product_names=("Product Name", lambda s: "<br>".join(s)))
+        fig = px.scatter_geo(map_df, locations="Country of Origin", locationmode="country names", size="Products", hover_name="Country of Origin", hover_data={"Products": True, "Product_names": True}, projection="natural earth")
+        fig.update_geos(showframe=False, showcoastlines=True, coastlinecolor="#cbd5e1", landcolor="#f8fafc", bgcolor="rgba(0,0,0,0)")
+        fig.update_layout(height=470, margin=dict(l=0, r=0, t=10, b=0), paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(map_df.rename(columns={"Product_names": "Products represented"}), use_container_width=True, hide_index=True)
 
-with compare_tab:
-    st.subheader("Compare products")
-    choices = filtered["Product Name"].tolist()
-    selected = st.multiselect("Choose up to four products", choices, max_selections=4)
+    st.markdown("### Featured products")
+    featured = filtered.head(3)
+    cols = st.columns(3)
+    for idx, (_, row) in enumerate(featured.iterrows()):
+        with cols[idx]:
+            st.markdown('<div class="product-card">', unsafe_allow_html=True)
+            image = resolve_image(row)
+            if image:
+                st.image(str(image), use_container_width=True)
+            st.markdown(f'<div class="product-title">{escape(row["Product Name"])}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="muted">{escape(row["Country of Origin"])} · {escape(row["Primary Medical Field"])}</div>', unsafe_allow_html=True)
+            st.markdown(badge_html("Commercial", row["Commercial Category"]), unsafe_allow_html=True)
+            st.write(short_text(row["Innovation"], 145))
+            if st.button("View full profile", key=f"dash_{row['Product Name']}", use_container_width=True):
+                st.session_state.selected_product = row["Product Name"]
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+elif page == "Explorer":
+    st.markdown("## Product explorer")
+    st.caption("Browse the portfolio using the filters in the sidebar.")
+    top_a, top_b = st.columns([3, 1])
+    with top_a:
+        st.write(f"Showing **{len(filtered)}** of **{len(data)}** products")
+    with top_b:
+        sort_choice = st.selectbox("Sort", ["Product name", "Country", "Commercial status"], label_visibility="collapsed")
+    sort_map = {"Product name": "Product Name", "Country": "Country of Origin", "Commercial status": "Commercial Category"}
+    if filtered.empty:
+        st.info("No products match the current filters.")
+    else:
+        rows = list(filtered.sort_values(sort_map[sort_choice]).iterrows())
+        for start in range(0, len(rows), 3):
+            cols = st.columns(3)
+            for col, (_, row) in zip(cols, rows[start:start + 3]):
+                with col:
+                    st.markdown('<div class="product-card">', unsafe_allow_html=True)
+                    image = resolve_image(row)
+                    if image:
+                        st.image(str(image), use_container_width=True)
+                    else:
+                        st.info("Image not linked")
+                    st.markdown(f'<div class="product-title">{escape(row["Product Name"])}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="muted">{escape(row["Country of Origin"])} · {escape(row["Primary Medical Field"])}</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        badge_html("Commercial", row["Commercial Category"]) + badge_html("U.S.", row["US Category"]),
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown('<div class="section-label">Innovation</div>', unsafe_allow_html=True)
+                    st.write(short_text(row["Innovation"]))
+                    if st.button("View full profile", key=f"explore_{row['Product Name']}", use_container_width=True):
+                        st.session_state.selected_product = row["Product Name"]
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+elif page == "Compare":
+    st.markdown("## Compare products")
+    selected = st.multiselect("Choose up to four products", filtered["Product Name"].tolist(), max_selections=4)
     if not selected:
         st.info("Select products to create a side-by-side comparison.")
     else:
+        selected_df = filtered[filtered["Product Name"].isin(selected)]
+        cards = st.columns(len(selected))
+        for col, (_, row) in zip(cards, selected_df.iterrows()):
+            with col:
+                image = resolve_image(row)
+                if image:
+                    st.image(str(image), use_container_width=True)
+                st.markdown(f"**{row['Product Name']}**")
+                st.caption(f"{row['Country of Origin']} · {row['Primary Medical Field']}")
         compare_cols = ["Product Name", "Product Type", "Country of Origin", "Medical Field", "Innovation", "Material Used", "Advantages", "Disadvantages/Limitations", "Commercial Category", "US Category", "Europe Category", "Middle East Category", "Recommendation"]
-        comparison = filtered[filtered["Product Name"].isin(selected)][compare_cols].set_index("Product Name").T
+        comparison = selected_df[compare_cols].set_index("Product Name").T
         st.dataframe(comparison, use_container_width=True)
 
-with insights_tab:
-    st.subheader("Dataset insights")
+elif page == "Analytics":
+    st.markdown("## Portfolio analytics")
     if filtered.empty:
         st.info("No records available for charts.")
     else:
-        country_counts = filtered["Country of Origin"].value_counts().rename_axis("Country").reset_index(name="Products")
-        fig_country = px.bar(country_counts, x="Country", y="Products", title="Products by country")
-        st.plotly_chart(fig_country, use_container_width=True)
-        status_counts = filtered["Commercial Category"].value_counts().rename_axis("Status").reset_index(name="Products")
-        fig_status = px.pie(status_counts, names="Status", values="Products", hole=.48, title="Commercial readiness")
-        st.plotly_chart(fig_status, use_container_width=True)
+        chart1, chart2 = st.columns(2)
+        with chart1:
+            country_counts = filtered["Country of Origin"].value_counts().rename_axis("Country").reset_index(name="Products")
+            fig_country = px.bar(country_counts, x="Country", y="Products", title="Products by country")
+            fig_country.update_layout(margin=dict(l=10, r=10, t=55, b=10))
+            st.plotly_chart(fig_country, use_container_width=True)
+        with chart2:
+            status_counts = filtered["Commercial Category"].value_counts().rename_axis("Status").reset_index(name="Products")
+            fig_status = px.pie(status_counts, names="Status", values="Products", hole=.52, title="Commercial readiness")
+            st.plotly_chart(fig_status, use_container_width=True)
         field_counts = filtered["Primary Medical Field"].value_counts().head(12).rename_axis("Medical field").reset_index(name="Products")
         fig_field = px.bar(field_counts, x="Products", y="Medical field", orientation="h", title="Leading medical fields")
         st.plotly_chart(fig_field, use_container_width=True)
 
-with data_tab:
-    st.subheader("Filtered research data")
+else:
+    st.markdown("## Research data")
     display_cols = [c for c in ["Product Name", "Product Type", "Country of Origin", "Medical Field", "Commercial Category", "US Category", "Europe Category", "Middle East Category", "Website"] if c in filtered.columns]
     st.dataframe(filtered[display_cols], use_container_width=True, hide_index=True)
     csv = filtered.to_csv(index=False).encode("utf-8")
